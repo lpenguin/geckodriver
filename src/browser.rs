@@ -43,6 +43,14 @@ impl Browser {
         }
     }
 
+    pub(crate) fn marionette_timeout(&self) -> Option<u64> {
+        match self {
+            Browser::Local(x) => x.marionette_timeout,
+            Browser::Remote(x) => x.marionette_timeout,
+            Browser::Existing(_) => None,
+        }
+    }
+
     pub(crate) fn update_marionette_port(&mut self, port: u16) {
         match self {
             Browser::Local(x) => x.update_marionette_port(port),
@@ -62,6 +70,7 @@ impl Browser {
 /// A local Firefox process, running on this (host) device.
 pub(crate) struct LocalBrowser {
     marionette_port: u16,
+    marionette_timeout: Option<u64>,
     prefs_backup: Option<PrefsBackup>,
     process: FirefoxProcess,
     profile_path: Option<PathBuf>,
@@ -71,6 +80,7 @@ impl LocalBrowser {
     pub(crate) fn new(
         options: FirefoxOptions,
         marionette_port: u16,
+        marionette_timeout: Option<u64>,
         jsdebugger: bool,
         profile_root: Option<&Path>,
     ) -> WebDriverResult<LocalBrowser> {
@@ -144,6 +154,7 @@ impl LocalBrowser {
 
         Ok(LocalBrowser {
             marionette_port,
+            marionette_timeout,
             prefs_backup,
             process,
             profile_path,
@@ -231,6 +242,7 @@ fn read_marionette_port(profile_path: &Path) -> Option<u16> {
 pub(crate) struct RemoteBrowser {
     handler: AndroidHandler,
     marionette_port: u16,
+    marionette_timeout: Option<u64>,
     prefs_backup: Option<PrefsBackup>,
 }
 
@@ -238,6 +250,7 @@ impl RemoteBrowser {
     pub(crate) fn new(
         options: FirefoxOptions,
         marionette_port: u16,
+        marionette_timeout: Option<u64>,
         websocket_port: Option<u16>,
         profile_root: Option<&Path>,
     ) -> WebDriverResult<RemoteBrowser> {
@@ -278,6 +291,7 @@ impl RemoteBrowser {
         Ok(RemoteBrowser {
             handler,
             marionette_port,
+            marionette_timeout,
             prefs_backup,
         })
     }

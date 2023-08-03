@@ -85,6 +85,7 @@ pub(crate) struct MarionetteSettings {
     pub(crate) connect_existing: bool,
     pub(crate) host: String,
     pub(crate) port: Option<u16>,
+    pub(crate) timeout: Option<u64>,
     pub(crate) websocket_port: u16,
     pub(crate) allow_hosts: Vec<Host>,
     pub(crate) allow_origins: Vec<Url>,
@@ -139,6 +140,7 @@ impl MarionetteHandler {
         }
 
         let marionette_host = self.settings.host.to_owned();
+        let marionette_timeout = self.settings.timeout;
         let marionette_port = match self.settings.port {
             Some(port) => port,
             None => {
@@ -188,6 +190,7 @@ impl MarionetteHandler {
             Browser::Remote(RemoteBrowser::new(
                 options,
                 marionette_port,
+                marionette_timeout,
                 websocket_port,
                 self.settings.profile_root.as_deref(),
             )?)
@@ -195,6 +198,7 @@ impl MarionetteHandler {
             Browser::Local(LocalBrowser::new(
                 options,
                 marionette_port,
+                marionette_timeout,
                 self.settings.jsdebugger,
                 self.settings.profile_root.as_deref(),
             )?)
@@ -1192,7 +1196,8 @@ impl MarionetteConnection {
     }
 
     fn connect(host: &str, browser: &mut Browser) -> WebDriverResult<TcpStream> {
-        let timeout = time::Duration::from_secs(60);
+        let timeout_millis = browser.marionette_timeout().unwrap_or(60000);
+        let timeout = time::Duration::from_millis(timeout_millis);
         let poll_interval = time::Duration::from_millis(100);
         let now = time::Instant::now();
 

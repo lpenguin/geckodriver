@@ -291,7 +291,13 @@ fn parse_args(cmd: &mut Command) -> ProgramResult<Operation> {
         },
         None => None,
     };
-
+    let marionette_timeout = match args.value_of("marionette_timeout") {
+        Some(s) => match u64::from_str(s) {
+            Ok(n) => Some(n),
+            Err(e) => usage!("invalid --marionette-timeout: {}", e),
+        },
+        None => None,
+    };
     // For Android the port on the device must be the same as the one on the
     // host. For now default to 9222, which is the default for --remote-debugging-port.
     let websocket_port = match args.value_of("websocket_port") {
@@ -325,6 +331,7 @@ fn parse_args(cmd: &mut Command) -> ProgramResult<Operation> {
         connect_existing: args.is_present("connect_existing"),
         host: marionette_host.into(),
         port: marionette_port,
+        timeout: marionette_timeout,
         websocket_port,
         allow_hosts: allow_hosts.clone(),
         allow_origins: allow_origins.clone(),
@@ -445,6 +452,14 @@ fn make_command<'a>() -> Command<'a> {
                 .takes_value(true)
                 .value_name("PORT")
                 .help("Port to use to connect to Gecko [default: system-allocated port]"),
+        )
+        .arg(
+            Arg::new("marionette_timeout")
+                .long("marionette-timeout")
+                .takes_value(true)
+                .value_name("TIMEOUT")
+                .default_value("60000")
+                .help("Timeout for marionette connection [default: 60000]"),
         )
         .arg(
             Arg::new("websocket_port")
